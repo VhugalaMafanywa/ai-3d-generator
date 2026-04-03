@@ -27,7 +27,7 @@ function App() {
   const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
 
-  const BACKEND_URL = 'http://127.0.0.1:5000';
+  const BACKEND_URL = 'https://ai-3d-generator-1.onrender.com';
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
