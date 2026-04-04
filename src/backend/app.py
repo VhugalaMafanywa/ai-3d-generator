@@ -6,7 +6,7 @@ import cohere
 app = Flask(__name__)
 CORS(app)
 
-COHERE_API_KEY = "i5CF3sStWeTPbBnaBm15r3d7XgSI5VzIhk7ZOjTF"
+COHERE_API_KEY = "brYlj1KevLeXGDlsROcJoofxzcZ8HQPFVAE1IguW"
 MODEL_FOLDER = "static/models"
 
 MODEL_MAPPING = {
