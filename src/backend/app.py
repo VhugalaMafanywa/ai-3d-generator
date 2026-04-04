@@ -7,8 +7,8 @@ import cohere
 app = Flask(__name__)
 CORS(app)
 
-# ===================== CONFIG =====================
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+BACKEND_URL = os.getenv("https://ai-3d-generator-6.onrender.com")
 
 MODEL_FOLDER = "static/models"
 
@@ -35,12 +35,9 @@ def analyze():
         if not user_text and not image_base64:
             return jsonify({"error": "Please provide text or upload an image"}), 400
 
-        print(f"Request - Text: '{user_text}' | Image: {'Yes' if image_base64 else 'No'}")
+        object_name = user_text
 
-      
-        object_name = user_text  
-
-        if image_base64:
+        if image_base64 and co:
             try:
                 vision_messages = [
                     {
@@ -67,13 +64,10 @@ def analyze():
                         identified += item.text
 
                 object_name = identified.strip()
-                print(f"Vision identified object as: {object_name}")
 
-            except Exception as e:
-                print("Vision identification failed:", str(e))
+            except Exception:
                 object_name = user_text or "unknown object"
 
-       
         summary = f"Educational summary for: {object_name}"
 
         if co:
@@ -97,9 +91,7 @@ def analyze():
 
                 full_text = ""
                 for item in response.message.content:
-                    if hasattr(item, 'type') and item.type == "thinking":
-                        print(f"Reasoning: {item.thinking[:300]}...")
-                    elif hasattr(item, 'text'):
+                    if hasattr(item, 'text'):
                         full_text += item.text
                     elif hasattr(item, 'type') and item.type == "text":
                         full_text += item.text
@@ -107,11 +99,9 @@ def analyze():
                 if full_text.strip():
                     summary = full_text.strip()
 
-            except Exception as e:
-                print("Reasoning Error:", str(e))
+            except Exception:
                 summary = f"Educational information about {object_name}."
 
-        
         model_filename = MODEL_MAPPING.get("default", "default.glb")
         lower_name = object_name.lower()
         for keyword, filename in MODEL_MAPPING.items():
@@ -119,7 +109,7 @@ def analyze():
                 model_filename = filename
                 break
 
-        model_url = request.host_url + f"static/models/{model_filename}"
+        model_url = (BACKEND_URL.rstrip('/') if BACKEND_URL else request.host_url.rstrip('/')) + f"/static/models/{model_filename}"
 
         return jsonify({
             "model_url": model_url,
@@ -127,14 +117,10 @@ def analyze():
             "identified_object": object_name
         })
 
-    except Exception as e:
-        print("=== BACKEND CRITICAL ERROR ===")
+    except Exception:
         print(traceback.format_exc())
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
-
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     os.makedirs(MODEL_FOLDER, exist_ok=True)
-    print("🚀 Server running on http://127.0.0.1:5000")
-    print("Image identification + Reasoning enabled")
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=True)
