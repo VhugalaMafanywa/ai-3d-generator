@@ -120,7 +120,10 @@ def analyze():
                 model_filename = filename
                 break
 
-        model_url = f"http://127.0.0.1:5000/static/models/{model_filename}"
+       BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
+
+model_url = f"{BASE_URL}/static/models/{model_filename}"
+
 
         return jsonify({
             "model_url": model_url,
