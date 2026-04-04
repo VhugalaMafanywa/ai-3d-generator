@@ -1,226 +1,126 @@
-import { useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stage, Environment, useGLTF } from '@react-three/drei';
-import axios from 'axios';
-import { 
-  Beaker, 
-  Upload, 
-  Brain, 
-  RotateCw, 
-  AlertCircle, 
-  Image as ImageIcon,
-  MousePointerClick,
-  Download 
-} from 'lucide-react';
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
+import traceback
+import cohere
 
-function RealModel({ url }) {
-  const { scene } = useGLTF(url);
-  return <primitive object={scene} scale={2.5} />;
+app = Flask(__name__)
+CORS(app)
+
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+BACKEND_URL = os.getenv("https://ai-3d-generator-6.onrender.com")
+
+MODEL_FOLDER = "static/models"
+
+MODEL_MAPPING = {
+    "hat": "hard_hat.glb",
+    "hard hat": "hard_hat.glb",
+    "helmet": "hard_hat.glb",
+    "extinguisher": "fire_extinguisher.glb",
+    "fire extinguisher": "fire_extinguisher.glb",
+    "camera": "CCTV Camera.glb",
+    "table": "Table.glb",
+    "ladder": "Ladder.glb"
 }
 
-function App() {
-  const [prompt, setPrompt] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [modelUrl, setModelUrl] = useState(null);
-  const [summary, setSummary] = useState('');
-  const [error, setError] = useState('');
+co = cohere.ClientV2(api_key=COHERE_API_KEY) if COHERE_API_KEY else None
 
-  const BACKEND_URL = 'https://ai-3d-generator-6.onrender.com/';
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    try:
+        data = request.get_json()
+        user_text = data.get('text', '').strip()
+        image_base64 = data.get('image')
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Image too large (max 10MB)');
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+        if not user_text and not image_base64:
+            return jsonify({"error": "Please provide text or upload an image"}), 400
 
-  const toBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-    });
+        object_name = user_text
 
-  const handleGenerate = async () => {
-    if (!prompt.trim() && !imageFile) {
-      alert('Please enter a description or upload an image');
-      return;
-    }
+        if image_base64 and co:
+            try:
+                vision_messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "What is the main object shown in this image? Reply with only the name or short description (1-5 words). Do not explain."},
+                            {"type": "image_url", "image_url": {"url": image_base64 if image_base64.startswith("data:") else f"data:image/jpeg;base64,{image_base64}"}}
+                        ]
+                    }
+                ]
 
-    setIsGenerating(true);
-    setError('');
-    setModelUrl(null);
-    setSummary('');
-    setImagePreview(null);
+                vision_response = co.chat(
+                    model="command-a-vision-07-2025",
+                    messages=vision_messages,
+                    temperature=0.3,
+                    max_tokens=50
+                )
 
-    try {
-      let imageBase64 = null;
-      if (imageFile) {
-        imageBase64 = await toBase64(imageFile);
-      }
+                identified = ""
+                for item in vision_response.message.content:
+                    if hasattr(item, 'text'):
+                        identified += item.text
+                    elif hasattr(item, 'type') and item.type == "text":
+                        identified += item.text
 
-      const response = await axios.post(`${BACKEND_URL}/analyze`, {
-        text: prompt.trim(),
-        image: imageBase64,
-      }, {
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity,
-        timeout: 180000,
-      });
+                object_name = identified.strip()
 
-      setModelUrl(response.data.model_url);
-      setSummary(response.data.summary || '');
+            except Exception:
+                object_name = user_text or "unknown object"
 
-    } catch (err) {
-      console.error('Full error:', err);
-      let errorMsg = 'Unknown error';
-      if (err.response) {
-        const data = err.response.data;
-        errorMsg = data?.error || data?.message || JSON.stringify(data).slice(0, 200);
-      } else if (err.request) {
-        errorMsg = 'Backend server is not responding. Is Flask running?';
-      } else {
-        errorMsg = err.message;
-      }
-      setError(`❌ ${errorMsg}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+        summary = f"Educational summary for: {object_name}"
 
-  return (
-    <div className="h-screen flex flex-col bg-zinc-950 text-white">
-      {/* Header */}
-      <div className="h-14 border-b border-zinc-800 flex items-center px-6 text-lg font-semibold">
-        <Beaker className="w-6 h-6 mr-3 text-blue-500" />
-        AI 3D Asset Generator
-      </div>
+        if co:
+            try:
+                reasoning_prompt = (
+                    f"You are a helpful educator. The object is: {object_name}.\n"
+                    f"User description: {user_text}\n\n"
+                    "Give a short, interesting 2-4 sentence educational summary. "
+                    "Explain its purpose, how it works, history, safety tips, or fun facts. "
+                    "Do not just repeat what the object is."
+                )
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Input */}
-        <div className="w-80 border-r border-zinc-800 p-6 flex flex-col gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Brain className="w-5 h-5 text-blue-400" />
-              <label className="block text-sm font-medium">Text Description</label>
-            </div>
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="yellow hard hat, fire extinguisher..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500"
-              disabled={isGenerating}
-            />
-          </div>
+                response = co.chat(
+                    model="command-a-reasoning-08-2025",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful educator."},
+                        {"role": "user", "content": reasoning_prompt}
+                    ],
+                    temperature=0.7,
+                )
 
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <ImageIcon className="w-5 h-5 text-blue-400" />
-              <label className="block text-sm font-medium">Or upload an image</label>
-            </div>
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-2xl cursor-pointer hover:border-blue-500 transition-colors">
-              <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-              <span className="text-sm text-zinc-400">Choose File</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={isGenerating}
-                className="hidden"
-              />
-            </label>
-            {imagePreview && (
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
-                className="mt-4 w-full rounded-2xl border border-zinc-700" 
-              />
-            )}
-          </div>
+                full_text = ""
+                for item in response.message.content:
+                    if hasattr(item, 'text'):
+                        full_text += item.text
+                    elif hasattr(item, 'type') and item.type == "text":
+                        full_text += item.text
 
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="mt-auto bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 px-6 py-4 rounded-2xl font-medium text-lg transition-all flex items-center justify-center gap-3"
-          >
-            {isGenerating ? (
-              <>
-                <RotateCw className="w-5 h-5 animate-spin" />
-                Generating 3D Model...
-              </>
-            ) : (
-              'Generate 3D Model'
-            )}
-          </button>
+                if full_text.strip():
+                    summary = full_text.strip()
 
-          {error && (
-            <div className="p-4 bg-red-900/30 border border-red-500 rounded-2xl text-sm flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <div>{error}</div>
-            </div>
-          )}
-        </div>
+            except Exception:
+                summary = f"Educational information about {object_name}."
 
-        {/* 3D Viewer */}
-        <div className="flex-1 flex flex-col relative bg-zinc-900">
-          <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-            <Stage environment="city" intensity={0.6}>
-              {modelUrl ? (
-                <RealModel url={modelUrl} />
-              ) : (
-                <mesh rotation={[0, Math.PI / 4, 0]}>
-                  <boxGeometry args={[1.5, 1.5, 1.5]} />
-                  <meshStandardMaterial color="#000000" />
-                </mesh>
-              )}
-            </Stage>
-            <OrbitControls enablePan enableZoom enableRotate />
-            <Environment preset="city" />
-          </Canvas>
+        model_filename = MODEL_MAPPING.get("default", "default.glb")
+        lower_name = object_name.lower()
+        for keyword, filename in MODEL_MAPPING.items():
+            if keyword in lower_name:
+                model_filename = filename
+                break
 
-          {/* Download Button - appears only when model is loaded */}
-          {modelUrl && (
-            <a
-              href={modelUrl}
-              download
-              className="absolute bottom-6 right-6 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded-2xl flex items-center gap-2 text-sm font-medium transition-all shadow-xl border border-zinc-600 hover:border-blue-500"
-            >
-              <Download className="w-4 h-4" />
-              Download 
-            </a>
-          )}
+        model_url = (BACKEND_URL.rstrip('/') if BACKEND_URL else request.host_url.rstrip('/')) + f"/static/models/{model_filename}"
 
-          {/* Instructions */}
-          <div className="absolute bottom-6 left-6 bg-black/70 text-xs px-4 py-2 rounded-2xl flex items-center gap-2">
-            <MousePointerClick className="w-4 h-4" />
-            Drag to rotate • Scroll with two fingers to zoom
-          </div>
-        </div>
+        return jsonify({
+            "model_url": model_url,
+            "summary": summary,
+            "identified_object": object_name
+        })
 
-        {/* Educational Summary */}
-        <div className="w-80 border-l border-zinc-800 p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-4">
-            <Brain className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold">Educational Summary</h2>
-          </div>
-          <div className="flex-1 bg-zinc-900 rounded-3xl p-6 text-sm leading-relaxed text-zinc-300 overflow-auto">
-            {summary || 'Generate a model to see the AI-powered educational summary here.'}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+    except Exception:
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error"}), 500
 
-export default App;
+if __name__ == '__main__':
+    os.makedirs(MODEL_FOLDER, exist_ok=True)
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=True)
