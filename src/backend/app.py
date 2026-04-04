@@ -7,7 +7,7 @@ from flask import url_for
 app = Flask(__name__)
 CORS(app)
 
-COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+COHERE_API_KEY = "Z4vOSl46rgKlfaA1KO7t1sjRxZrf0TWbyfa2hezL"
 BACKEND_URL = os.getenv("BACKEND_URL")
 MODEL_FOLDER = "static/models"
 
