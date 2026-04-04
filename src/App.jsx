@@ -27,7 +27,6 @@ function App() {
   const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
 
-  // Hardcoded backend URL (deployed Render backend)
   const BACKEND_URL = 'https://ai-3d-generator-6.onrender.com';
 
   const handleFileSelect = (e) => {
@@ -93,7 +92,7 @@ function App() {
         const data = err.response.data;
         errorMsg = data?.error || data?.message || JSON.stringify(data).slice(0, 200);
       } else if (err.request) {
-        errorMsg = 'Backend server is not responding. Is Flask running?';
+        errorMsg = 'Backend server is not responding.';
       } else {
         errorMsg = err.message;
       }
@@ -104,18 +103,23 @@ function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950 text-white">
+    <div className="min-h-screen flex flex-col bg-zinc-950 text-white">
+
+      {/* Header */}
       <div className="h-14 border-b border-zinc-800 flex items-center px-6 text-lg font-semibold">
         <Beaker className="w-6 h-6 mr-3 text-blue-500" />
         AI 3D Asset Generator
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-80 border-r border-zinc-800 p-6 flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden">
+
+        {/* Sidebar */}
+        <div className="w-full md:w-80 border-r border-zinc-800 p-4 md:p-6 flex flex-col gap-6 overflow-y-auto">
+          
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Brain className="w-5 h-5 text-blue-400" />
-              <label className="block text-sm font-medium">Text Description</label>
+              <label className="text-sm font-medium">Text Description</label>
             </div>
             <input
               type="text"
@@ -130,8 +134,9 @@ function App() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <ImageIcon className="w-5 h-5 text-blue-400" />
-              <label className="block text-sm font-medium">Or upload an image</label>
+              <label className="text-sm font-medium">Or upload an image</label>
             </div>
+
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-2xl cursor-pointer hover:border-blue-500 transition-colors">
               <Upload className="w-8 h-8 text-zinc-400 mb-2" />
               <span className="text-sm text-zinc-400">Choose File</span>
@@ -143,6 +148,7 @@ function App() {
                 className="hidden"
               />
             </label>
+
             {imagePreview && (
               <img 
                 src={imagePreview} 
@@ -160,7 +166,7 @@ function App() {
             {isGenerating ? (
               <>
                 <RotateCw className="w-5 h-5 animate-spin" />
-                Generating 3D Model...
+                Generating...
               </>
             ) : (
               'Generate 3D Model'
@@ -169,13 +175,14 @@ function App() {
 
           {error && (
             <div className="p-4 bg-red-900/30 border border-red-500 rounded-2xl text-sm flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
               <div>{error}</div>
             </div>
           )}
         </div>
 
-        <div className="flex-1 flex flex-col relative bg-zinc-900">
+        {/* 3D Viewer */}
+        <div className="flex-1 h-[50vh] md:h-auto flex flex-col relative bg-zinc-900">
           <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
             <Stage environment="city" intensity={0.6}>
               {modelUrl ? (
@@ -195,28 +202,31 @@ function App() {
             <a
               href={modelUrl}
               download
-              className="absolute bottom-6 right-6 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded-2xl flex items-center gap-2 text-sm font-medium transition-all shadow-xl border border-zinc-600 hover:border-blue-500"
+              className="absolute bottom-6 right-6 bg-zinc-800 hover:bg-zinc-700 px-5 py-3 rounded-2xl flex items-center gap-2 text-sm border border-zinc-600 hover:border-blue-500"
             >
               <Download className="w-4 h-4" />
-              Download 
+              Download
             </a>
           )}
 
           <div className="absolute bottom-6 left-6 bg-black/70 text-xs px-4 py-2 rounded-2xl flex items-center gap-2">
             <MousePointerClick className="w-4 h-4" />
-            Drag to rotate • Scroll with two fingers to zoom
+            Drag • Zoom
           </div>
         </div>
 
-        <div className="w-80 border-l border-zinc-800 p-6 flex flex-col">
+        {/* Summary */}
+        <div className="w-full md:w-80 border-l border-zinc-800 p-4 md:p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <Brain className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-semibold">Educational Summary</h2>
           </div>
-          <div className="flex-1 bg-zinc-900 rounded-3xl p-6 text-sm leading-relaxed text-zinc-300 overflow-auto">
-            {summary || 'Generate a model to see the AI-powered educational summary here.'}
+
+          <div className="flex-1 bg-zinc-900 rounded-3xl p-6 text-sm text-zinc-300 overflow-auto">
+            {summary || 'Generate a model to see the summary.'}
           </div>
         </div>
+
       </div>
     </div>
   );
