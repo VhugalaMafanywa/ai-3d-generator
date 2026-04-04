@@ -27,6 +27,7 @@ function App() {
   const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
 
+  // Hardcoded backend URL (deployed Render backend)
   const BACKEND_URL = 'https://ai-3d-generator-6.onrender.com';
 
   const handleFileSelect = (e) => {
@@ -78,7 +79,11 @@ function App() {
         timeout: 180000,
       });
 
-      setModelUrl(response.data.model_url);
+      const modelResponse = response.data.model_url.startsWith('http')
+        ? response.data.model_url
+        : `${BACKEND_URL}/static/models/${response.data.model_url}`;
+
+      setModelUrl(modelResponse);
       setSummary(response.data.summary || '');
 
     } catch (err) {
@@ -100,14 +105,12 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col bg-zinc-950 text-white">
-      {/* Header */}
       <div className="h-14 border-b border-zinc-800 flex items-center px-6 text-lg font-semibold">
         <Beaker className="w-6 h-6 mr-3 text-blue-500" />
         AI 3D Asset Generator
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Input */}
         <div className="w-80 border-r border-zinc-800 p-6 flex flex-col gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -172,7 +175,6 @@ function App() {
           )}
         </div>
 
-        {/* 3D Viewer */}
         <div className="flex-1 flex flex-col relative bg-zinc-900">
           <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
             <Stage environment="city" intensity={0.6}>
@@ -189,7 +191,6 @@ function App() {
             <Environment preset="city" />
           </Canvas>
 
-          {/* Download Button - appears only when model is loaded */}
           {modelUrl && (
             <a
               href={modelUrl}
@@ -201,14 +202,12 @@ function App() {
             </a>
           )}
 
-          {/* Instructions */}
           <div className="absolute bottom-6 left-6 bg-black/70 text-xs px-4 py-2 rounded-2xl flex items-center gap-2">
             <MousePointerClick className="w-4 h-4" />
             Drag to rotate • Scroll with two fingers to zoom
           </div>
         </div>
 
-        {/* Educational Summary */}
         <div className="w-80 border-l border-zinc-800 p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <Brain className="w-5 h-5 text-blue-400" />
