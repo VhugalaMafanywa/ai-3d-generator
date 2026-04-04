@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import cohere
+from flask import url_for
 
 app = Flask(__name__)
 CORS(app)
@@ -64,7 +65,7 @@ def analyze():
             model_filename = filename
             break
 
-    model_url = f"{BACKEND_URL}/static/models/{model_filename}"
+    model_url = url_for('static', filename=f"models/{model_filename}", _external=True)
     return jsonify({"model_url": model_url, "summary": summary, "identified_object": object_name})
 
 if __name__ == '__main__':
