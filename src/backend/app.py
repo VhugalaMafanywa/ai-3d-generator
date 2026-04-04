@@ -32,7 +32,7 @@ def analyze():
         return jsonify({"error": "Please provide text or upload an image"}), 400
 
     # Step 1: Identify object
-    object_name = user_text
+    object_name = user_text or "unknown object"
     if image_base64 and co:
         try:
             vision_messages = [
@@ -50,11 +50,17 @@ def analyze():
                 temperature=0.3,
                 max_tokens=50
             )
-            identified = "".join([item.text for item in vision_response.message.content if hasattr(item, 'text')])
-            object_name = identified.strip() or user_text
+            # Safely extract text
+            identified = ""
+            for item in getattr(vision_response.message, "content", []):
+                if hasattr(item, "text"):
+                    identified += item.text
+                elif getattr(item, "type", "") == "text" and hasattr(item, "text"):
+                    identified += item.text
+            object_name = identified.strip() or object_name
+            print(f"[Vision] Identified object: {object_name}")
         except Exception as e:
-            print("Vision identification failed:", str(e))
-            object_name = user_text or "unknown object"
+            print("[Vision Error]", e)
 
     # Step 2: Get AI reasoning
     summary = f"Educational summary for: {object_name}"
@@ -75,12 +81,16 @@ def analyze():
                 ],
                 temperature=0.7,
             )
-            full_text = "".join([item.text for item in response.message.content if hasattr(item, 'text')])
+            # Safely extract reasoning
+            full_text = ""
+            for item in getattr(response.message, "content", []):
+                if hasattr(item, "text"):
+                    full_text += item.text
             if full_text.strip():
                 summary = full_text.strip()
+            print(f"[Reasoning] Summary: {summary}")
         except Exception as e:
-            print("Reasoning Error:", str(e))
-            summary = f"Educational information about {object_name}."
+            print("[Reasoning Error]", e)
 
     # Step 3: Select 3D model
     model_filename = "default.glb"
