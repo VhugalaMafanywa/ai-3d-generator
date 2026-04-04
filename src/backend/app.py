@@ -31,77 +31,89 @@ def analyze():
     if not user_text and not image_base64:
         return jsonify({"error": "Please provide text or upload an image"}), 400
 
-    # Step 1: Identify object
+    # Identify object
     object_name = user_text or "unknown object"
+
     if image_base64 and co:
         try:
             vision_messages = [
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "What is the main object shown in this image? Reply with only the name or short description (1-5 words). Do not explain."},
-                        {"type": "image_url", "image_url": {"url": image_base64 if image_base64.startswith("data:") else f"data:image/jpeg;base64,{image_base64}"}}
+                        {"type": "text", "text": "What is the main object shown in this image? Reply with only the name."},
+                        {"type": "image_url", "image_url": {"url": image_base64}}
                     ]
                 }
             ]
+
             vision_response = co.chat(
                 model="command-a-vision-07-2025",
                 messages=vision_messages,
                 temperature=0.3,
                 max_tokens=50
             )
-            # Safely extract text
+
             identified = ""
             for item in getattr(vision_response.message, "content", []):
-                if hasattr(item, "text"):
-                    identified += item.text
-                elif getattr(item, "type", "") == "text" and hasattr(item, "text"):
-                    identified += item.text
+                if hasattr(item, "text") and item.text:
+                    identified += str(item.text)
+
             object_name = identified.strip() or object_name
-            print(f"[Vision] Identified object: {object_name}")
+            print("[Vision]", object_name)
+
         except Exception as e:
             print("[Vision Error]", e)
 
-    # Step 2: Get AI reasoning
+    # Reasoning
     summary = f"Educational summary for: {object_name}"
+
     if co:
         try:
             reasoning_prompt = (
-                f"You are a helpful educator. The object is: {object_name}.\n"
+                f"You are a helpful educator.\n"
+                f"Object: {object_name}\n"
                 f"User description: {user_text}\n\n"
-                "Give a short, interesting 2-4 sentence educational summary. "
-                "Explain its purpose, how it works, history, safety tips, or fun facts. "
-                "Do not just repeat what the object is."
+                f"Give a short 2-4 sentence educational explanation."
             )
+
             response = co.chat(
-                model="command-a-reasoning-08-2025",
+                model="command-a-reasoning-08-2025",  
                 messages=[
-                    {"role": "system", "content": "You are a helpful educator."},
                     {"role": "user", "content": reasoning_prompt}
                 ],
                 temperature=0.7,
             )
-            # Safely extract reasoning
+
             full_text = ""
+
             for item in getattr(response.message, "content", []):
-                if hasattr(item, "text"):
-                    full_text += item.text
+                if hasattr(item, "text") and item.text:
+                    full_text += str(item.text)
+
             if full_text.strip():
                 summary = full_text.strip()
-            print(f"[Reasoning] Summary: {summary}")
+
+            print("[Reasoning]", summary)
+
         except Exception as e:
             print("[Reasoning Error]", e)
 
-    # Step 3: Select 3D model
+    # Select model
     model_filename = "default.glb"
     lower_name = object_name.lower()
+
     for keyword, filename in MODEL_MAPPING.items():
         if keyword in lower_name:
             model_filename = filename
             break
 
     model_url = url_for('static', filename=f"models/{model_filename}", _external=True)
-    return jsonify({"model_url": model_url, "summary": summary, "identified_object": object_name})
+
+    return jsonify({
+        "model_url": model_url,
+        "summary": summary,
+        "identified_object": object_name
+    })
 
 
 if __name__ == '__main__':
