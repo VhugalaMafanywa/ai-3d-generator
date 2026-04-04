@@ -18,7 +18,7 @@ MODEL_MAPPING = {
     "helmet": "hard_hat.glb",
     "extinguisher": "fire_extinguisher.glb",
     "fire extinguisher": "fire_extinguisher.glb",
-    "camera" : "CCTV Camera.glb",
+    "camera": "CCTV Camera.glb",
     "table": "Table.glb",
     "ladder": "Ladder.glb"
 }
@@ -37,12 +37,11 @@ def analyze():
 
         print(f"Request - Text: '{user_text}' | Image: {'Yes' if image_base64 else 'No'}")
 
-        # ===================== STEP 1: Identify the object in the image =====================
-        object_name = user_text  # default to user text
+      
+        object_name = user_text  
 
         if image_base64:
             try:
-                # Use vision model to identify what is in the picture
                 vision_messages = [
                     {
                         "role": "user",
@@ -74,7 +73,7 @@ def analyze():
                 print("Vision identification failed:", str(e))
                 object_name = user_text or "unknown object"
 
-        # ===================== STEP 2: Send to Cohere for reasoning only =====================
+       
         summary = f"Educational summary for: {object_name}"
 
         if co:
@@ -112,7 +111,7 @@ def analyze():
                 print("Reasoning Error:", str(e))
                 summary = f"Educational information about {object_name}."
 
-        # ===================== STEP 3: Select 3D model =====================
+        
         model_filename = MODEL_MAPPING.get("default", "default.glb")
         lower_name = object_name.lower()
         for keyword, filename in MODEL_MAPPING.items():
@@ -120,13 +119,12 @@ def analyze():
                 model_filename = filename
                 break
 
-      model_url = request.host_url + f"static/models/{model_filename}"
-
+        model_url = request.host_url + f"static/models/{model_filename}"
 
         return jsonify({
             "model_url": model_url,
             "summary": summary,
-            "identified_object": object_name   # optional: useful for debugging
+            "identified_object": object_name
         })
 
     except Exception as e:
@@ -139,4 +137,4 @@ if __name__ == '__main__':
     os.makedirs(MODEL_FOLDER, exist_ok=True)
     print("🚀 Server running on http://127.0.0.1:5000")
     print("Image identification + Reasoning enabled")
-    app.run(host='0.0.0.0',debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=5000)
