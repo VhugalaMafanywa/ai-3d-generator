@@ -1,86 +1,76 @@
-# 🧠 AI 3D Asset Generator
+# AI 3D Model Generator
 
-An AI-powered web application that generates **3D models** and **educational summaries** from text descriptions or uploaded images.
+## 🚀 Overview
+A web-based AI-powered system to generate and visualize 3D models in real-time. Users can upload images or provide input, and the system outputs interactive 3D models rendered in the browser using Three.js.
+- <img width="1365" height="588" alt="image" src="https://github.com/user-attachments/assets/3c723d51-61cf-469b-8f42-f865f740cb7b" />
 
----
-
-## 🚀 Live Demo
-
- https://ai-3d-generator-eight.vercel.app/  
 
 ---
 
-## ✨ Features
-
-- 🔍 Upload an image or enter text
-- 🤖 AI detects the object from image using vision models
-- 🧠 Generates an educational summary
-- 🧱 Displays a 3D model of the object
-- 🎮 Interactive 3D viewer (rotate, zoom)
-- ⬇️ Download 3D assets
+## 🧠 Features
+- Generate 3D models from user inputs  
+- Real-time rendering with Three.js  
+- Interactive scene controls (rotate, zoom, inspect)  
+- Optimized asset loading (GLB/FBX)  
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Tech Stack
 
 ### Frontend
-- React
-- @react-three/fiber
-- @react-three/drei
-- Tailwind CSS
-- Axios
+- React  
+- Three.js  
+- @react-three/fiber  
+- @react-three/drei  
 
 ### Backend
-- Python (Flask)
-- Cohere API (Vision + AI reasoning)
-- Flask-CORS
+- Flask  
+- Flask-CORS  
+
+### AI / 3D Tools
+- Prebuilt 3D models (GLB/FBX)  
+- AI-assisted processing logic  
 
 ---
 
-# 🧠 AI 3D Asset Generator
+## ⚙️ Setup Instructions
 
-An AI-powered web application that generates **interactive 3D models** and **educational summaries** from text descriptions or uploaded images.
-
----
-
-## 🚀 Live Demo
-
-Frontend: https://ai-3d-generator-eight.vercel.app/  
-Backend: https://ai-3d-generator-6.onrender.com  
-
----
-
-## ✨ Features
-
-- 🔍 Upload an image or enter text
-- 🤖 AI detects the object using vision models
-- 🧠 Generates an educational summary
-- 🧱 Displays a 3D model of the object
-- 🎮 Interactive 3D viewer (rotate, zoom)
-- ⬇️ Download 3D assets
+###  Clone the repository
+- git clone https://github.com/VhugalaMafanywa/ai-3d-model-generator.git
+- cd ai-3d-model-generator
+###  Backend setup
+- cd backend
+- pip install -r requirements.txt
+- python app.py
+- runs on (https://ai-3d-generator-6.onrender.com)
 
 ---
 
-## 🛠️ Tech Stack
+###  Frontend setup
+- cd frontend
+- npm install
+- npm run dev
+- Runs on (https://ai-3d-generator-eight.vercel.app/)
 
-### Frontend
-- React
-- @react-three/fiber
-- @react-three/drei
-- Tailwind CSS
-- Axios
+---
 
-### Backend
-- Python (Flask)
-- Cohere API (Vision + AI reasoning)
-- Flask-CORS
+##  🔌 APIs & Tools Used
+- Three.js – 3D rendering
+- React Three Fiber – React integration for 3D
+- GLB / FBX models – optimized 3D assets
 
-### Deployment
--Frontend (Vercel)
--Connect GitHub repo
--Deploy automatically
--Backend (Render)
--Set root directory: backend
+---
 
+##  ⚠️ Limitations
+- AI generation is limited to processing existing models
+- Performance depends on 3D model size
+- No fully custom generative 3D AI implemented yet
 
+---
 
+##  🔮 Next Steps
+- Integrate advanced generative 3D AI
+- Improve model optimization pipeline
+- Add editing and customization features
+- Add cloud storage for generated models
+- Add cloud storage for generated models
