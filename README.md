@@ -36,7 +36,7 @@ A web-based AI-powered system to generate and visualize 3D models in real-time. 
 ## ⚙️ Setup Instructions
 
 ###  Clone the repository
-- git clone https://github.com/VhugalaMafanywa/ai-3d-model-generator.git
+- (https://github.com/VhugalaMafanywa/ai-3d-generator.git)
 - cd ai-3d-model-generator
 ###  Backend setup
 - cd backend
